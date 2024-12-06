@@ -84,21 +84,27 @@ def calcTurn():
     movesTaken.append(move)
     remove.append([x,y])
     e=game[y][x]
-    #print(e)
+    #print("x=",x,"y=",y,e)
     checkGame(game,x,y,e)
     #printGame()
     for a in remove:
-        game[a[1]][a[0]]=" "
+        game[a[1]][a[0]]="X"
     remove.clear()
     for ii in range(gameHeight):
         for i in range(1,gameHeight+1):
             for j in range(1,gameWidth+1):
-                if game[i-1][j]==" ":
+                if game[i-1][j]=="X":
                     game[i-1][j]=game[i][j]
-                    game[i][j]=" "
-    for a in legalMoves:
-        if game[a[1]][a[0]] == " ":
-            legalMoves.remove(a)
+                    game[i][j]="X"
+    legalMoves.clear()
+    for i in range(1,gameWidth+1):
+        for j in range(1,gameHeight+1):
+            if game[j][i] in items:
+                legalMoves.append([i,j])
+    #print(legalMoves)
+#    for a in legalMoves:
+#        if game[a[1]][a[0]] == "X":
+#            legalMoves.remove(a)
 
 while True:
     #makeGame(game)
@@ -127,8 +133,10 @@ while True:
     if len(movesTaken)<low:
         low=len(movesTaken)
         f = open("results", "a")
-        result=str(low) + str(movesTaken) + "\n"
+        result=f"Moves: {str(low)} CheckedGames: {tested} \n {str(movesTaken)} \n"
         f.write(result)
         f.close()
     print("Lowest: ", low)
     print("Tested :", tested)
+    #time.sleep(1)
+    #break
