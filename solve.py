@@ -10,6 +10,7 @@ gameHeight=9
 low=int(sys.argv[3])
 tested=0
 limit=int(sys.argv[1])
+randomLevel=int(sys.argv[4])
 
 def printGame(currentGame):
     for i in reversed(range(gameHeight+2)):
@@ -70,27 +71,27 @@ def selVal(text,lim):
     else:
         pass
 
-def calcTurn(game,movesTaken,low,tested,legalMoves,move):
+def calcTurn(game,movesTaken,low,tested,randomLevel):
     if sys.argv[2]=="random":
         if (tested % limit)==0:
-            return(low,tested,legalMoves)
+            return(low,tested,randomLevel)
         tested=tested+1
     localMoves=[]
     currentGame=deepcopy(game)
     if len(movesTaken)>=low:
-        print(f"\nBranch Terminated! oldLow: {low}, nMovesTaken: {len(movesTaken)} Tested: {tested} Limit: {limit} MovesTaken: {movesTaken}", end="")
+        print(f"\nBranch Terminated! oldLow: {low}, nMovesTaken: {len(movesTaken)} Tested: {tested} Limit: {limit} randomLevel: {randomLevel} MovesTaken: {movesTaken}", end="")
 
-        return(low,tested,legalMoves)
+        return(low,tested,randomLevel)
     for i in range(1,gameWidth+1):
         for j in range(1,gameHeight+1):
             if currentGame[j][i] in items:
                 localMoves.append([i,j])
     if len(localMoves)<1:
-        print(f"\nBranch Ended! oldLow: {low}, nMovesTaken: {len(movesTaken)} Tested: {tested} MovesTaken: Limit: {limit} {movesTaken}", end="")
+        print(f"\nBranch Ended! oldLow: {low}, nMovesTaken: {len(movesTaken)} Tested: {tested} Limit: {limit} randomLevel: {randomLevel} MovesTaken: {movesTaken}", end="")
         if len(movesTaken)<low:
             low=len(movesTaken)
             f = open("results_r", "a")
-            result=f"Branch Ended! oldLow: {low}, nMovesTaken: {len(movesTaken)} Tested: {tested} MovesTaken: {movesTaken}\n"
+            result=f"Branch Ended! oldLow: {low}, nMovesTaken: {len(movesTaken)} Tested: {tested} Limit: {limit} randomLevel: {randomLevel} MovesTaken: {movesTaken}\n"
             f.write(result)
             f.close()
             try:
@@ -100,24 +101,25 @@ def calcTurn(game,movesTaken,low,tested,legalMoves,move):
                             ff.write(str(low))
             except:
                 pass
-            return(low,tested,legalMoves)
-        return(low,tested,legalMoves)
+            return(low,tested,randomLevel)
+        return(low,tested,randomLevel)
     if len(sys.argv)>2:
-        if sys.argv[2]=="random":
+        if sys.argv[2]=="random" or len(movesTaken)>randomLevel-1:
             random.shuffle(localMoves)
     for move in localMoves:
         if sys.argv[2]!="random":
-            if (tested % limit)==0:
+            if (tested % limit)==0 and len(movesTaken)>randomLevel-1:
                 try:
                     with open("global_low", "r") as f:
                         k=int(f.read())
                         if low>k:
                             low=k
                 except Exception as e:
-                    print(e)
-                    print("cant read")
                     pass
-                break
+                #print(f"break, {len(movesTaken)} {movesTaken}")
+                break#continue
+                #break
+            tested=tested+1
         nextGame=deepcopy(currentGame)
         x=move[0]
         y=move[1]
@@ -135,9 +137,9 @@ def calcTurn(game,movesTaken,low,tested,legalMoves,move):
                     if nextGame[i-1][j]=="X":
                         nextGame[i-1][j]=nextGame[i][j]
                         nextGame[i][j]="X"
-        low,tested,legalMoves=calcTurn(nextGame,movesTaken,low,tested,legalMoves,move)
+        low,tested,randomLevel=calcTurn(nextGame,movesTaken,low,tested,randomLevel)
         movesTaken.pop()
-    return(low,tested,legalMoves)
+    return(low,tested,randomLevel)
 
 game={
     10:{0: ' ', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: ''},
@@ -158,32 +160,16 @@ game={
 #    2: {0: '2 ', 1: 'K', 2: 'D', 3: 'K', 4: 'N', 5: ''},
 #    1: {0: '1 ', 1: 'N', 2: 'D', 3: 'O', 4: 'O', 5: ''},
 #    0: {0: '  ', 1: '1', 2: '2', 3: '3', 4: '4', 5: ''}}
-legalMoves=[[1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1], [1, 2], [2, 2], [3, 2], [4, 2], [5, 2], [6, 2], [7, 2], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6], [7, 6], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [1, 8], [2, 8], [3, 8], [4, 8], [5, 8], [6, 8], [7, 8], [1, 9], [2, 9], [3, 9], [4, 9], [5, 9], [6, 9], [7, 9]]
+#legalMoves=[[1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1], [1, 2], [2, 2], [3, 2], [4, 2], [5, 2], [6, 2], [7, 2], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6], [7, 6], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [1, 8], [2, 8], [3, 8], [4, 8], [5, 8], [6, 8], [7, 8], [1, 9], [2, 9], [3, 9], [4, 9], [5, 9], [6, 9], [7, 9]]
 movesTaken=[]
-if sys.argv[2]=="random":
-    while True:
-        tested=tested+1
-        try:
-            with open("global_low", "r") as f:
-                k=int(f.read())
-                if low>k:
-                    low=k
-        except Exception as e:
-            print(e)
-            print("cant read")
-            pass
-        move=[0,0]
-        low,tested,legalMoves=calcTurn(game,movesTaken,low,tested,legalMoves,move)
-if sys.argv[2]!="random":
-    for move in legalMoves:
-        tested=tested+1
-        try:
-            with open("global_low", "r") as f:
-                k=int(f.read())
-                if low>k:
-                    low=k
-        except Exception as e:
-            print(e)
-            print("cant read")
-            pass
-        low,tested,legalMoves=calcTurn(game,movesTaken,low,tested,legalMoves,move)
+while True:
+    tested=tested+1
+    try:
+        with open("global_low", "r") as f:
+            k=int(f.read())
+            if low>k:
+                low=k
+    except Exception as e:
+        pass
+    low,tested,randomLevel=calcTurn(game,movesTaken,low,tested,randomLevel)
+    randomLevel=randomLevel+1
