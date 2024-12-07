@@ -1,12 +1,15 @@
 import random
+import sys
 import time
+from copy import deepcopy
 from colorama import Fore, Back, Style
 game={}
 items=["K","O","N","D"]
-gameWidth=4#7
-gameHeight=4#9
-low=gameWidth*gameHeight
+gameWidth=7
+gameHeight=9
+low=int(sys.argv[3])
 tested=0
+limit=int(sys.argv[1])
 
 def printGame(currentGame):
     for i in reversed(range(gameHeight+2)):
@@ -33,29 +36,21 @@ def makeGame(game):
 
 def checkGame(game,x,y,e,checked,remove):
     checked.append([x,y])
-    #print(f"remove {remove}, checked {checked} ,x {x}, y {y}, e {e}")
-    #print(f"checking {x}, {y}")
-    #print(checked)
-    #printGame(game)
-    #print(game[y+1][x])
     if game[y+1][x]==e:
         if ([x,y+1] not in remove):
             remove.append([x,y+1])
         if ([x,y+1] not in checked):
             checkGame(game,x,y+1,e,checked,remove)
-    #print(game[y-1][x])
     if game[y-1][x]==e:
         if ([x,y-1] not in remove):
             remove.append([x,y-1])
         if ([x,y-1] not in checked):
             checkGame(game,x,y-1,e,checked,remove)
-    #print(game[y][x+1])
     if game[y][x+1]==e:
         if ([x+1,y] not in remove):
             remove.append([x+1,y])
         if ([x+1,y] not in checked):
             checkGame(game,x+1,y,e,checked,remove)
-    #print(game[y][x-1])
     if game[y][x-1]==e:
         if ([x-1,y] not in remove):
             remove.append([x-1,y])
@@ -75,82 +70,106 @@ def selVal(text,lim):
     else:
         pass
 
-def calcTurn(game,movesTaken,low):
-    legalMoves=[]
-    currentGame=game
-    printGame(currentGame)
+def calcTurn(game,movesTaken,low,tested,legalMoves,move):
+    if sys.argv[2]=="random":
+        if (tested % limit)==0:
+            return(low,tested,legalMoves)
+        tested=tested+1
+    localMoves=[]
+    currentGame=deepcopy(game)
+    if len(movesTaken)>=low:
+        print(f"\nBranch Terminated! oldLow: {low}, nMovesTaken: {len(movesTaken)} Tested: {tested} Limit: {limit} MovesTaken: {movesTaken}", end="")
+
+        return(low,tested,legalMoves)
     for i in range(1,gameWidth+1):
         for j in range(1,gameHeight+1):
             if currentGame[j][i] in items:
-                legalMoves.append([i,j])
-    if len(legalMoves)==0:
-        return
-    if len(legalMoves)<1:
-        print(f"Branch ended! MovesTaken: {movesTaken}, {str(movesTaken)}")
+                localMoves.append([i,j])
+    if len(localMoves)<1:
+        print(f"\nBranch Ended! oldLow: {low}, nMovesTaken: {len(movesTaken)} Tested: {tested} MovesTaken: Limit: {limit} {movesTaken}", end="")
         if len(movesTaken)<low:
             low=len(movesTaken)
             f = open("results_r", "a")
-            result=f"Moves: {str(low)} \n {str(movesTaken)} \n"
+            result=f"Branch Ended! oldLow: {low}, nMovesTaken: {len(movesTaken)} Tested: {tested} MovesTaken: {movesTaken}\n"
             f.write(result)
             f.close()
-        movesTaken.pop()
-        return
-    if len(movesTaken)>low:
-        print(f"Branch terminated! MovesTaken: {movesTaken}, {str(movesTaken)}")
-        movesTaken.pop()
-        return
-    for move in legalMoves:
+            try:
+                with open("global_low", "r") as f:
+                    if low<int(f.read()):
+                        with open("global_low", "w") as ff:
+                            ff.write(str(low))
+            except:
+                pass
+            return(low,tested,legalMoves)
+        return(low,tested,legalMoves)
+    if len(sys.argv)>2:
+        if sys.argv[2]=="random":
+            random.shuffle(localMoves)
+    for move in localMoves:
+        if sys.argv[2]!="random":
+            if (tested % limit)==0:
+                try:
+                    with open("global_low", "r") as f:
+                        k=int(f.read())
+                        if low>k:
+                            low=k
+                except Exception as e:
+                    print(e)
+                    print("cant read")
+                    pass
+                break
+        nextGame=deepcopy(currentGame)
         x=move[0]
         y=move[1]
-        e=currentGame[y][x]
-        if e not in items:
-            print(f"Branch ended! MovesTaken: {movesTaken}, {str(movesTaken)}")
-            movesTaken.pop()
-            if len(movesTaken)<low:
-                low=len(movesTaken)
-                f = open("results_r", "a")
-                result=f"Moves: {str(low)} \n {str(movesTaken)} \n"
-                f.write(result)
-                f.close()
-            continue
+        e=nextGame[y][x]
         movesTaken.append(move)
         remove=[]
         checked=[]
         remove.append([x,y])
-        checkGame(currentGame,x,y,e,checked,remove)
-        #break
-        nextGame=currentGame
+        checkGame(nextGame,x,y,e,checked,remove)
         for a in remove:
             nextGame[a[1]][a[0]]="X"
-        remove.clear()
         for ii in range(gameHeight):
             for i in range(1,gameHeight+1):
                 for j in range(1,gameWidth+1):
                     if nextGame[i-1][j]=="X":
                         nextGame[i-1][j]=nextGame[i][j]
                         nextGame[i][j]="X"
-        #printGame(currentGame)
-        calcTurn(nextGame,movesTaken,low)
+        low,tested,legalMoves=calcTurn(nextGame,movesTaken,low,tested,legalMoves,move)
+        movesTaken.pop()
+    return(low,tested,legalMoves)
 
-#game={
-#    10:{0: ' ', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: ''},
-#    9: {0: '9 ', 1: 'D', 2: 'D', 3: 'O', 4: 'D', 5: 'K', 6: 'O', 7: 'K', 8: ''},
-#    8: {0: '8 ', 1: 'N', 2: 'O', 3: 'O', 4: 'N', 5: 'O', 6: 'O', 7: 'K', 8: ''},
-#    7: {0: '7 ', 1: 'O', 2: 'N', 3: 'O', 4: 'N', 5: 'K', 6: 'K', 7: 'N', 8: ''},
-#    6: {0: '6 ', 1: 'D', 2: 'K', 3: 'K', 4: 'D', 5: 'O', 6: 'K', 7: 'O', 8: ''},
-#    5: {0: '5 ', 1: 'D', 2: 'N', 3: 'D', 4: 'N', 5: 'D', 6: 'O', 7: 'N', 8: ''},
-#    4: {0: '4 ', 1: 'D', 2: 'K', 3: 'N', 4: 'K', 5: 'D', 6: 'D', 7: 'N', 8: ''},
-#    3: {0: '3 ', 1: 'O', 2: 'N', 3: 'O', 4: 'D', 5: 'O', 6: 'O', 7: 'N', 8: ''},
-#    2: {0: '2 ', 1: 'K', 2: 'D', 3: 'K', 4: 'N', 5: 'O', 6: 'N', 7: 'D', 8: ''},
-#    1: {0: '1 ', 1: 'N', 2: 'D', 3: 'O', 4: 'O', 5: 'O', 6: 'O', 7: 'K', 8: ''},
-#    0: {0: '  ', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: ''}}
 game={
-    5:{0: ' ', 1: '', 2: '', 3: '', 4: '', 5: ''},
-    4: {0: '4 ', 1: 'D', 2: 'K', 3: 'N', 4: 'K', 5: ''},
-    3: {0: '3 ', 1: 'O', 2: 'N', 3: 'O', 4: 'D', 5: ''},
-    2: {0: '2 ', 1: 'K', 2: 'D', 3: 'K', 4: 'N', 5: ''},
-    1: {0: '1 ', 1: 'N', 2: 'D', 3: 'O', 4: 'O', 5: ''},
-    0: {0: '  ', 1: '1', 2: '2', 3: '3', 4: '4', 5: ''}}
-    #legalMoves=[[1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1], [1, 2], [2, 2], [3, 2], [4, 2], [5, 2], [6, 2], [7, 2], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6], [7, 6], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [1, 8], [2, 8], [3, 8], [4, 8], [5, 8], [6, 8], [7, 8], [1, 9], [2, 9], [3, 9], [4, 9], [5, 9], [6, 9], [7, 9]]
+    10:{0: ' ', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: ''},
+    9: {0: '9 ', 1: 'D', 2: 'D', 3: 'O', 4: 'D', 5: 'K', 6: 'O', 7: 'K', 8: ''},
+    8: {0: '8 ', 1: 'N', 2: 'O', 3: 'O', 4: 'N', 5: 'O', 6: 'O', 7: 'K', 8: ''},
+    7: {0: '7 ', 1: 'O', 2: 'N', 3: 'O', 4: 'N', 5: 'K', 6: 'K', 7: 'N', 8: ''},
+    6: {0: '6 ', 1: 'D', 2: 'K', 3: 'K', 4: 'D', 5: 'O', 6: 'K', 7: 'O', 8: ''},
+    5: {0: '5 ', 1: 'D', 2: 'N', 3: 'D', 4: 'N', 5: 'D', 6: 'O', 7: 'N', 8: ''},
+    4: {0: '4 ', 1: 'D', 2: 'K', 3: 'N', 4: 'K', 5: 'D', 6: 'D', 7: 'N', 8: ''},
+    3: {0: '3 ', 1: 'O', 2: 'N', 3: 'O', 4: 'D', 5: 'O', 6: 'O', 7: 'N', 8: ''},
+    2: {0: '2 ', 1: 'K', 2: 'D', 3: 'K', 4: 'N', 5: 'O', 6: 'N', 7: 'D', 8: ''},
+    1: {0: '1 ', 1: 'N', 2: 'D', 3: 'O', 4: 'O', 5: 'O', 6: 'O', 7: 'K', 8: ''},
+    0: {0: '  ', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: ''}}
+#game={
+#    5:{0: ' ', 1: '', 2: '', 3: '', 4: '', 5: ''},
+#    4: {0: '4 ', 1: 'D', 2: 'K', 3: 'N', 4: 'K', 5: ''},
+#    3: {0: '3 ', 1: 'O', 2: 'N', 3: 'O', 4: 'D', 5: ''},
+#    2: {0: '2 ', 1: 'K', 2: 'D', 3: 'K', 4: 'N', 5: ''},
+#    1: {0: '1 ', 1: 'N', 2: 'D', 3: 'O', 4: 'O', 5: ''},
+#    0: {0: '  ', 1: '1', 2: '2', 3: '3', 4: '4', 5: ''}}
+legalMoves=[[1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1], [1, 2], [2, 2], [3, 2], [4, 2], [5, 2], [6, 2], [7, 2], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6], [7, 6], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [1, 8], [2, 8], [3, 8], [4, 8], [5, 8], [6, 8], [7, 8], [1, 9], [2, 9], [3, 9], [4, 9], [5, 9], [6, 9], [7, 9]]
 movesTaken=[]
-calcTurn(game,movesTaken,low)
+for move in legalMoves:
+    print(move)
+    tested=tested+1
+    try:
+        with open("global_low", "r") as f:
+            k=int(f.read())
+            if low>k:
+                low=k
+    except Exception as e:
+        print(e)
+        print("cant read")
+        pass
+    low,tested,legalMoves=calcTurn(game,movesTaken,low,tested,legalMoves,move)
