@@ -160,16 +160,30 @@ game={
 #    0: {0: '  ', 1: '1', 2: '2', 3: '3', 4: '4', 5: ''}}
 legalMoves=[[1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1], [1, 2], [2, 2], [3, 2], [4, 2], [5, 2], [6, 2], [7, 2], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6], [7, 6], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [1, 8], [2, 8], [3, 8], [4, 8], [5, 8], [6, 8], [7, 8], [1, 9], [2, 9], [3, 9], [4, 9], [5, 9], [6, 9], [7, 9]]
 movesTaken=[]
-for move in legalMoves:
-    print(move)
-    tested=tested+1
-    try:
-        with open("global_low", "r") as f:
-            k=int(f.read())
-            if low>k:
-                low=k
-    except Exception as e:
-        print(e)
-        print("cant read")
-        pass
-    low,tested,legalMoves=calcTurn(game,movesTaken,low,tested,legalMoves,move)
+if sys.argv[2]=="random":
+    while True:
+        tested=tested+1
+        try:
+            with open("global_low", "r") as f:
+                k=int(f.read())
+                if low>k:
+                    low=k
+        except Exception as e:
+            print(e)
+            print("cant read")
+            pass
+        move=[0,0]
+        low,tested,legalMoves=calcTurn(game,movesTaken,low,tested,legalMoves,move)
+if sys.argv[2]!="random":
+    for move in legalMoves:
+        tested=tested+1
+        try:
+            with open("global_low", "r") as f:
+                k=int(f.read())
+                if low>k:
+                    low=k
+        except Exception as e:
+            print(e)
+            print("cant read")
+            pass
+        low,tested,legalMoves=calcTurn(game,movesTaken,low,tested,legalMoves,move)
