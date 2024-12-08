@@ -7,11 +7,15 @@ game={}
 items=["K","O","N","D"]
 gameWidth=7
 gameHeight=9
-low=63
+pathsFile="results_8_test"
+nTakenFile="ntaken_8_test"
+low=19
+high=0
 limit=63
 tested=0
 downLevel=int(sys.argv[1])
 topLevel=int(sys.argv[2])
+checker=int(sys.argv[3])
 
 def printGame(currentGame):
     for i in reversed(range(gameHeight+2)):
@@ -67,42 +71,39 @@ game={
     2: {0: '2 ', 1: 'N', 2: 'K', 3: 'O', 4: 'O', 5: 'O', 6: 'K', 7: 'K', 8: ''},
     1: {0: '1 ', 1: 'K', 2: 'N', 3: 'O', 4: 'O', 5: 'D', 6: 'K', 7: 'D', 8: ''},
     0: {0: '  ', 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: ''}}
-#game={
-#    5:{0: ' ', 1: '', 2: '', 3: '', 4: '', 5: ''},
-#    4: {0: '4 ', 1: 'D', 2: 'K', 3: 'N', 4: 'K', 5: ''},
-#    3: {0: '3 ', 1: 'O', 2: 'N', 3: 'O', 4: 'D', 5: ''},
-#    2: {0: '2 ', 1: 'K', 2: 'D', 3: 'K', 4: 'N', 5: ''},
-#    1: {0: '1 ', 1: 'N', 2: 'D', 3: 'O', 4: 'O', 5: ''},
-#    0: {0: '  ', 1: '1', 2: '2', 3: '3', 4: '4', 5: ''}}
-#legalMoves=[[1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1], [1, 2], [2, 2], [3, 2], [4, 2], [5, 2], [6, 2], [7, 2], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [7, 3], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [6, 5], [7, 5], [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6], [7, 6], [1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [7, 7], [1, 8], [2, 8], [3, 8], [4, 8], [5, 8], [6, 8], [7, 8], [1, 9], [2, 9], [3, 9], [4, 9], [5, 9], [6, 9], [7, 9]]
 movesTaken=[]
 
-def testGame(game,movesTaken,low,tested):
+def testGame(game,movesTaken,low,tested,nTaken,high):
     currentGame=deepcopy(game)
     localMoves=[]
+    checkingGame=deepcopy(game)
     for i in range(1,gameWidth+1):
         for j in range(1,gameHeight+1):
-            if currentGame[j][i] in items:
+            if checkingGame[j][i] in items:
                 localMoves.append([i,j])
+                localChecked=[]
+                equal=[]
+                checkGame(checkingGame,i,j,checkingGame[j][i],localChecked,equal)
+                for a in equal:
+                    checkingGame[a[1]][a[0]]="X"
     if len(localMoves)==0:
-        print(f"DONE! Found {len(movesTaken)} after {tested} branches. {movesTaken}")
-        if low>len(movesTaken):
+        if low>=len(movesTaken):
             low=len(movesTaken)
-        return(low,tested)
-    #print(f"{len(localMoves)} localMoves: {localMoves}")
-    #nMoves=nMoves*len(localMoves)
+            with open(pathsFile, "a") as f:
+                result=f"\nDONE! Found {len(movesTaken)} after {tested} branches. nTaken {nTaken}. DownLevel {downLevel}, TopLevel {topLevel}. {movesTaken}"
+                f.write(result)
+        return(low,tested,high)
     if len(movesTaken)>=topLevel:
         random.shuffle(localMoves)
     for move in localMoves:
-        #print(f"Breaking: {tested} low: {low}, {len(movesTaken)} movesTaken: {movesTaken}")
+        #print(f"\nTesting: {tested}, nTaken: {nTaken}, low: {low}, high: {high}, lowLevel: {downLevel}, topLevel: {topLevel}, {len(movesTaken)} movesTaken: {movesTaken}", end="")
         movesTaken.append(move)
         if ((tested % downLevel) == 0) and (len(movesTaken)>topLevel):
             movesTaken.pop()
-            #print(f"Breaking: {tested} low: {low}, {len(movesTaken)} movesTaken: {movesTaken}")
             break
         tested=tested+1
-        if len(movesTaken)>=low:
-            print(f"Continue: {tested} low: {low}, {len(movesTaken)} movesTaken: {movesTaken}")
+        if len(movesTaken)>low:
+            print(f"\nBreaking: {tested}, nTaken: {nTaken}, low: {low}, high: {high}, lowLevel: {downLevel}, topLevel: {topLevel}, {len(movesTaken)} movesTaken: {movesTaken}", end="")
             movesTaken.pop()
             break
         nextGame=deepcopy(currentGame)
@@ -113,16 +114,23 @@ def testGame(game,movesTaken,low,tested):
         checkGame(nextGame,move[0],move[1],e,checked,remove)
         for a in remove:
             nextGame[a[1]][a[0]]="X"
+        nTaken=nTaken+len(remove)
+        if len(movesTaken)<=checker and nTaken >= high:
+            with open(nTakenFile, "a") as f:
+                result=f"\n{nTaken} {movesTaken}"
+                f.write(result)
+            high=nTaken
         for ii in range(gameHeight):
             for i in range(1,gameHeight+1):
                 for j in range(1,gameWidth+1):
                     if nextGame[i-1][j]=="X":
                         nextGame[i-1][j]=nextGame[i][j]
                         nextGame[i][j]="X"
-        low,tested=testGame(nextGame,movesTaken,low,tested)
+        low,tested,high=testGame(nextGame,movesTaken,low,tested,nTaken,high)
+        nTaken=nTaken-len(remove)
         movesTaken.pop()
-    #print(f"Tested: {tested} low: {low}, {len(movesTaken)} movesTaken: {movesTaken}")
-    return(low,tested)
+    #print(f"Status: {tested}, nTaken: {nTaken}, low: {low}, high: {high}, lowLevel: {downLevel}, topLevel: {topLevel}, {len(movesTaken)} movesTaken: {movesTaken}")
+    return(low,tested,high)
 
 try:
     with open("global_low", "r") as f:
@@ -131,6 +139,11 @@ try:
             low=k
 except Exception as e:
     pass
-nMoves=1
+nTaken=0
 while True:
-    low,tested=testGame(game,movesTaken,low,tested)
+    low,tested,high=testGame(game,movesTaken,low,tested,nTaken,high)
+#low,tested,high=testGame(game,movesTaken,low,tested,nTaken,high)
+#print(f"Ended: {tested}, nTaken: {nTaken}, low: {low}, high: {high}, lowLevel: {downLevel}, topLevel: {topLevel}, {len(movesTaken)} movesTaken: {movesTaken}")
+    #with open("nTakenFile", "a") as f:
+    #    result=f"\nEnded: {tested}, nTaken: {nTaken}, low: {low}, high: {high}, lowLevel: {downLevel}, topLevel: {topLevel}, {len(movesTaken)} movesTaken: {movesTaken}"
+    #    f.write(result)
