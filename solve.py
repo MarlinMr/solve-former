@@ -71,17 +71,17 @@ def selVal(text,lim):
     else:
         pass
 
-def calcTurn(game,movesTaken,low,tested,randomLevel):
+def calcTurn(game,movesTaken,low,tested,randomLevel,limit):
     if sys.argv[2]=="random":
         if (tested % limit)==0:
-            return(low,tested,randomLevel)
+            return(low,tested,randomLevel,limit)
         tested=tested+1
     localMoves=[]
     currentGame=deepcopy(game)
     if len(movesTaken)>=low:
         print(f"\nBranch Terminated! oldLow: {low}, nMovesTaken: {len(movesTaken)} Tested: {tested} Limit: {limit} randomLevel: {randomLevel} MovesTaken: {movesTaken}", end="")
 
-        return(low,tested,randomLevel)
+        return(low,tested,randomLevel,limit)
     for i in range(1,gameWidth+1):
         for j in range(1,gameHeight+1):
             if currentGame[j][i] in items:
@@ -101,14 +101,15 @@ def calcTurn(game,movesTaken,low,tested,randomLevel):
                             ff.write(str(low))
             except:
                 pass
-            return(low,tested,randomLevel)
-        return(low,tested,randomLevel)
+            return(low,tested,randomLevel,limit)
+        return(low,tested,randomLevel,limit)
     if len(sys.argv)>2:
         if sys.argv[2]=="random" or len(movesTaken)>randomLevel-1:
             random.shuffle(localMoves)
     for move in localMoves:
-        if sys.argv[2]!="random":
+        if True:#sys.argv[2]!="random":
             if (tested % limit)==0 and len(movesTaken)>randomLevel-1:
+                limit=int(limit/len(localMoves))
                 try:
                     with open("global_low", "r") as f:
                         k=int(f.read())
@@ -137,9 +138,9 @@ def calcTurn(game,movesTaken,low,tested,randomLevel):
                     if nextGame[i-1][j]=="X":
                         nextGame[i-1][j]=nextGame[i][j]
                         nextGame[i][j]="X"
-        low,tested,randomLevel=calcTurn(nextGame,movesTaken,low,tested,randomLevel)
+        low,tested,randomLevel,limit=calcTurn(nextGame,movesTaken,low,tested,randomLevel,limit)
         movesTaken.pop()
-    return(low,tested,randomLevel)
+    return(low,tested,randomLevel,limit)
 
 game={
     10:{0: ' ', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: ''},
@@ -171,5 +172,5 @@ while True:
                 low=k
     except Exception as e:
         pass
-    low,tested,randomLevel=calcTurn(game,movesTaken,low,tested,randomLevel)
+    low,tested,randomLevel,limit=calcTurn(game,movesTaken,low,tested,randomLevel,limit)
     randomLevel=randomLevel+1
