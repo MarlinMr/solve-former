@@ -2,7 +2,6 @@ import random
 import sys
 import time
 from copy import deepcopy
-from colorama import Fore, Back, Style
 game={}
 items=["K","O","N","D"]
 gameWidth=7
