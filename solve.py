@@ -1,6 +1,4 @@
-import random
-import sys
-import time
+import random, sys, time, os
 from copy import deepcopy
 game={}
 items=["K","O","N","D"]
@@ -12,9 +10,12 @@ low=19
 high=0
 limit=63
 tested=0
-downLevel=int(sys.argv[1])
-topLevel=int(sys.argv[2])
-checker=int(sys.argv[3])
+downLevel=int(os.environ["DOWNLEVEL"])
+topLevel=int(os.environ["TOPLEVEL"])
+checker=int(os.environ["CHECKER"])
+#downLevel=int(sys.argv[1])
+#topLevel=int(sys.argv[2])
+#checker=int(sys.argv[3])
 
 def printGame(currentGame):
     for i in reversed(range(gameHeight+2)):
